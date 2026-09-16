@@ -2,18 +2,6 @@
 # Marketing Campaign Performance Prediction
 # Step 1: Data Preprocessing Pipeline
 # ==========================================================
-#
-# Loads the three brand-wise raw CSV exports (Nykaa, Purplle, Tira),
-# merges them into a single dataset, and cleans it up:
-#   - missing Campaign_IDs are regenerated (don't collapse into "nan")
-#   - missing values are imputed (brand-aware for numeric columns)
-#   - dates are parsed as DD-MM-YYYY (source format), not the pandas
-#     default MM-DD-YYYY, which silently corrupts ambiguous dates
-#   - ROI is sanity-checked rather than blindly overwritten by a
-#     formula that does not match how this dataset was generated
-#     (see note below)
-#   - duplicate records and impossible negative values are removed
-# ==========================================================
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -98,10 +86,6 @@ if duplicate_count > 0:
 # ==========================================================
 # Fix Missing Campaign_ID
 # ==========================================================
-# Purplle and Tira have null Campaign_IDs. Casting NaN -> str() turns
-# every one of them into the literal string "nan", which collapses
-# thousands of distinct campaigns into a single duplicate ID. Instead
-# we regenerate a unique ID from the brand + row position.
 
 brand_prefix = {"Nykaa": "NY", "Purplle": "PU", "Tira": "TI"}
 
@@ -121,8 +105,7 @@ df["Campaign_ID"] = df["Campaign_ID"].astype(str)
 # ==========================================================
 # Fill Numeric Missing Values (median, per Brand)
 # ==========================================================
-# Imputing per brand keeps the fill value representative of that
-# brand's own campaign scale instead of blending all three together.
+
 
 for column in NUMERIC_COLUMNS:
     if column in df.columns:
@@ -146,10 +129,6 @@ print("Categorical Missing Values Filled (mode)")
 # ==========================================================
 # Date Conversion
 # ==========================================================
-# Source dates are DD-MM-YYYY (e.g. 06-04-2025 = 6 April 2025).
-# pandas' default parser assumes MM-DD-YYYY, which either silently
-# swaps day/month for day <= 12, or raises/NaTs everything else.
-# dayfirst=True parses this dataset correctly.
 
 df["Date"] = pd.to_datetime(df["Date"], errors="coerce", dayfirst=True)
 
@@ -163,15 +142,6 @@ if invalid_dates > 0:
 # ==========================================================
 # ROI Sanity Check
 # ==========================================================
-# The textbook formula ROI = ((Revenue - Cost) / Cost) * 100 does NOT
-# reconcile with this dataset: Revenue is generated on a much larger
-# scale than Acquisition_Cost, so applying that formula would replace
-# realistic ROI values (range ~ -1 to 80) with numbers in the millions
-# of percent for almost every row. Rather than overwrite good data
-# with a formula that doesn't match how ROI was actually generated,
-# we keep the provided ROI and only guard against values that are
-# logically impossible (a campaign cannot lose more than 100% of
-# investment, i.e. ROI below -1 as a ratio).
 
 print("\nValidating ROI...")
 
