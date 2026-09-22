@@ -2,17 +2,6 @@
 # Marketing Campaign Performance Prediction
 # Step 2: Feature Engineering
 # ==========================================================
-#
-# Builds all model-ready features on top of the cleaned dataset:
-#   - date-derived features (Year, Month, Day, Weekday)
-#   - Profit_Flag target for the classification model (ROI > 0)
-#   - performance ratio features (CTR, Lead_Rate, Conversion_Rate,
-#     CPC, CPL, Revenue_Per_Click, Revenue_Per_Conversion)
-#   - multi-label encoding of Channel_Used (a campaign can use
-#     several channels at once, e.g. "WhatsApp, YouTube")
-#
-# Saved with pickle (not joblib), per project requirements.
-# ==========================================================
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -64,11 +53,11 @@ print(df["Profit_Flag"].value_counts())
 # Performance Ratio Features
 # ==========================================================
 
-df["CTR"] = df["Clicks"] / df["Impressions"]                     # Click Through Rate
-df["Lead_Rate"] = df["Leads"] / df["Clicks"]                      # Lead Conversion Rate
-df["Conversion_Rate"] = df["Conversions"] / df["Leads"]           # Sales Conversion Rate
-df["CPC"] = df["Acquisition_Cost"] / df["Clicks"]                 # Cost Per Click
-df["CPL"] = df["Acquisition_Cost"] / df["Leads"]                  # Cost Per Lead
+df["CTR"] = df["Clicks"] / df["Impressions"]                     
+df["Lead_Rate"] = df["Leads"] / df["Clicks"]                      
+df["Conversion_Rate"] = df["Conversions"] / df["Leads"]          
+df["CPC"] = df["Acquisition_Cost"] / df["Clicks"]                
+df["CPL"] = df["Acquisition_Cost"] / df["Leads"]                  
 df["Revenue_Per_Click"] = df["Revenue"] / df["Clicks"]
 df["Revenue_Per_Conversion"] = df["Revenue"] / df["Conversions"]
 
@@ -113,16 +102,6 @@ with open("models/channel_encoder.pkl", "wb") as f:
     pickle.dump(mlb, f)
 
 print("\nChannel encoder saved -> models/channel_encoder.pkl")
-
-# NOTE: One-hot encoding / scaling of the remaining categorical and
-# numeric columns is intentionally NOT fitted here. The regression
-# and classification models drop different columns (e.g. the
-# classifier excludes Revenue and ROI to avoid target leakage), so
-# each model builds and fits its own ColumnTransformer inside its own
-# Pipeline in regression_model.py / classification_model.py. That
-# keeps a single saved model file (pickle) fully self-contained -
-# preprocessing + estimator together - which is what the Streamlit
-# app loads for inference.
 
 # ==========================================================
 # Save Feature Engineered Dataset
