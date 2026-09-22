@@ -57,10 +57,7 @@ TARGET = "Profit_Flag"
 
 # ==========================================================
 # Remove Leakage Columns
-# ==========================================================
-# ROI directly determines Profit_Flag (Profit_Flag = ROI > 0), and
-# Revenue / Revenue_Per_Click / Revenue_Per_Conversion are all tightly
-# entangled with ROI, so every one of them is dropped to avoid leakage.
+# ==========================================================.
 
 drop_columns = [
     "Campaign_ID",
@@ -75,10 +72,6 @@ drop_columns = [
 X = df.drop(columns=drop_columns)
 y = df[TARGET]
 
-# Persist the exact raw (pre-transform) column set + order the model
-# was trained on, so the Streamlit app can rebuild a matching input
-# row at inference time. This is a DIFFERENT column set than the
-# regression model (Revenue-related columns are absent here).
 with open("models/classification_feature_columns.pkl", "wb") as f:
     pickle.dump(X.columns.tolist(), f)
 
@@ -128,10 +121,6 @@ models = {
         max_iter=300, max_depth=8, learning_rate=0.05, random_state=42
     ),
 }
-# max_depth is capped for the same reason as the regression models:
-# faster training with no meaningful loss in accuracy on this dataset.
-# Gradient Boosting is added as a 4th, modern algorithm alongside the
-# 3 required by the project brief.
 
 results = []
 best_accuracy = 0
@@ -235,8 +224,6 @@ plt.close()
 # ==========================================================
 # Feature Importance
 # ==========================================================
-# Generic (works for whichever model wins, not just Random Forest):
-# permutation importance on a sample of the test set.
 
 print("\nComputing feature importance (permutation importance)...")
 
