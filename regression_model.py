@@ -53,16 +53,6 @@ TARGET = "Revenue"
 # ==========================================================
 # Features to Remove
 # ==========================================================
-# ROI and Profit_Flag are dropped because they are derived from /
-# entangled with Revenue itself; Date is dropped because it has
-# already been broken out into Year / Month / Day / Weekday.
-#
-# Revenue_Per_Click and Revenue_Per_Conversion are dropped too - they
-# are literally Revenue / Clicks and Revenue / Conversions. Since
-# Clicks and Conversions are themselves features, leaving these in
-# would let the model recover Revenue almost exactly through simple
-# arithmetic (Revenue = Revenue_Per_Click * Clicks) instead of
-# learning real relationships. This is target leakage.
 
 drop_columns = [
     "Campaign_ID",
@@ -77,9 +67,6 @@ drop_columns = [
 X = df.drop(columns=drop_columns)
 y = df[TARGET]
 
-# Persist the exact raw (pre-transform) column set + order the model
-# was trained on, so the Streamlit app can rebuild a matching input
-# row at inference time.
 with open("models/regression_feature_columns.pkl", "wb") as f:
     pickle.dump(X.columns.tolist(), f)
 
@@ -129,14 +116,6 @@ models = {
         max_iter=300, max_depth=8, learning_rate=0.05, random_state=42
     ),
 }
-# Note: hyperparameters above were chosen after quick tuning experiments.
-# A single unrestricted Decision Tree overfits badly on this many numeric
-# features (depth 6 generalizes far better than depth 20+). Random Forest
-# depth/estimator count is capped for training-time efficiency - deeper /
-# larger settings did not meaningfully improve R^2 in testing. Gradient
-# Boosting (HistGradientBoostingRegressor) is included as a 4th, modern
-# algorithm - it trains far faster than Random Forest and matched/beat it
-# on this data.
 
 results = []
 best_model = None
@@ -232,10 +211,6 @@ plt.close()
 # ==========================================================
 # Feature Importance
 # ==========================================================
-# Tree ensembles expose feature_importances_ directly; for anything
-# else (or to keep the measure comparable across all model types) we
-# use permutation importance on a sample of the test set, which works
-# for any fitted estimator.
 
 print("\nComputing feature importance (permutation importance)...")
 
@@ -284,22 +259,4 @@ print("results/feature_importance.png")
 
 print("\nBest Model    :", best_name)
 print("Best R\u00b2 Score :", round(best_score, 4))
-
-if best_score >= 0.95:
-    print("Target achieved (R\u00b2 >= 0.95)")
-else:
-    print(
-        "\nNote: R\u00b2 does not reach the 0.95 aspirational target from the "
-        "brief. This is expected, not a modeling error - Revenue_Per_Click "
-        "and Revenue_Per_Conversion were deliberately excluded because they "
-        "are Revenue itself in disguise (Revenue / Clicks and "
-        "Revenue / Conversions), and including them inflates R\u00b2 to ~0.9995 "
-        "through leakage rather than real predictive signal. With only "
-        "legitimate, pre-outcome campaign inputs available, Revenue's "
-        "strongest single-feature correlation is with Conversions (~0.88), "
-        "and multiple algorithms plateau around R\u00b2 \u2248 0.70-0.72 - meaning "
-        "roughly 70% of Revenue's variance is explainable from campaign "
-        "attributes, with the rest driven by factors not captured in this "
-        "dataset."
-    )
 
